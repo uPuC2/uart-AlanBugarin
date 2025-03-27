@@ -24,11 +24,37 @@ uint16_t atoi(char *str);
 
 void UART_puts(uint8_t com, char *str){
 
+	for(uint8_t i=0;i<sizeof(str);i++){
+		UART_putchar(com,str[i]);
+	}
 }
 
-void UART_putchar(uint8_t com, char data){
+void UART_putchar(uint8_t com,char data){
 
+	switch(com){
+		case 0:{
+			while(!(UCSR0A & (1<<UDRE0))); //Cuando este vacio se rompe
+			UDR0 =data; //pasamos el dato a UDR0
+			break;
+        }
+		case 1:{
+			while(!(UCSR1A & (1<<UDRE1))); //Cuando este vacio se rompe
+			UDR1 =data; //pasamos el dato a UDR1
+			break;
+        }
+		case 2:{
+			while(!(UCSR2A & (1<<UDRE2))); //Cuando este vacio se rompe
+			UDR2 =data; //pasamos el dato a UDR2
+			break;
+        }
+		case 3:{
+			(!(UCSR3A & (1<<UDRE3))); //Cuando este vacio se rompe
+			UDR3 =data; //pasamos el dato a UDR3
+			break;
+        }
+	}
 }
+
 
 uint8_t UART_available(uint8_t com){
 
