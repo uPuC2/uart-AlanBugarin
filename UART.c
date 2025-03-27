@@ -57,35 +57,53 @@ void UART_putchar(uint8_t com,char data){
 
 
 uint8_t UART_available(uint8_t com){
-
+	uint8_t estado;
+	switch(com){ //en espera de bit disponible
+		case 0:{
+			while(!(UCSR0A & (1<<RXC0)));
+			break;
+		}
+		case 1:{
+			while(!(UCSR1A & (1<<RXC1)));
+			break;
+		}
+		case 2:{
+			while(!(UCSR2A & (1<<RXC2)));
+			break;
+		}
+		case 3:{
+			while(!(UCSR3A & (1<<RXC3)));
+			break;
+		}
+	}
+	estado=1;
+	return estado;
 }
 
 char UART_getchar(uint8_t com){
 	
 	char data;
-	switch(com){
-		case 0:{
-			while(!(UCSR0A & (1<<RXC0)));
-			data=UDR0;
-			break;
+	if(UART_available(com)){
+		switch(com){
+			case 0:{
+				data=UDR0;
+				break;
+			}
+			case 1:{
+				data=UDR1;
+				break;
+			}
+			case 2:{
+				data=UDR2;
+				break;
+			}
+			case 3:{
+				data=UDR3;
+				break;
+			}
 		}
-		case 1:{
-			while(!(UCSR1A & (1<<RXC1)));
-			data=UDR1;
-			break;
-		}
-		case 2:{
-			while(!(UCSR2A & (1<<RXC2)));
-			data=UDR2;
-			break;
-		}
-		case 3:{
-			while(!(UCSR3A & (1<<RXC3)));
-			data=UDR3;
-			break;
-		}
+		return data;
 	}
-	return data;
 }
 
 void UART_gets(uint8_t com,char *str){
