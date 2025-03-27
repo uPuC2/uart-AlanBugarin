@@ -61,10 +61,45 @@ uint8_t UART_available(uint8_t com){
 }
 
 char UART_getchar(uint8_t com){
-
+	
+	char data;
+	switch(com){
+		case 0:{
+			while(!(UCSR0A & (1<<RXC0)));
+			data=UDR0;
+			break;
+		}
+		case 1:{
+			while(!(UCSR1A & (1<<RXC1)));
+			data=UDR1;
+			break;
+		}
+		case 2:{
+			while(!(UCSR2A & (1<<RXC2)));
+			data=UDR2;
+			break;
+		}
+		case 3:{
+			while(!(UCSR3A & (1<<RXC3)));
+			data=UDR3;
+			break;
+		}
+	}
+	return data;
 }
 
-void UART_gets(uint8_t com, char *str){
+void UART_gets(uint8_t com,char *str){
+	char caracter;
+	uint8_t idx=0;
+	while(1){
+		caracter=UART_getchar(com); //obtenemos el carac
+		if(caracter==13){ //si es un enter se rompe
+			break;
+		}else{
+			str[idx]=caracter; //coloca el caracter en la posicion actual
+			idx++;	//avanza el indice
+		}
+	}
 
 }
 
