@@ -122,7 +122,7 @@ void UART_gets(uint8_t com,char *str){
 }
 
 UART_clrscr(uint8_t com){
-
+    UART_puts("\x1b[2J",com);
 }
 
 UART_setColor(uint8_t com, uint8_t color){
