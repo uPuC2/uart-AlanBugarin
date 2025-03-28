@@ -22,174 +22,118 @@ void UART_gotoxy(uint8_t com,uint8_t x,uint8_t y);
 void itoa(uint16_t number,char* str,uint8_t base);
 uint16_t atoi(char *str);
 
-void UART_Ini(uint8_t com,uint32_t baudrate,uint8_t size,uint8_t parity,uint8_t stop){
+typedef struct{
+	union{
+		uint8_t UCSRA;
+		struct{
+			uint8_t mpcm:1;
+			uint8_t u2x:1;
+			uint8_t upe:1;
+			uint8_t dor:1;
+			uint8_t fe:1;
+			uint8_t udre:1;
+			uint8_t txc:1;
+			uint8_t rxc:1;
+		};
+	};
+	union{
+		uint8_t UCSRB;
+		struct{
+			uint8_t txb8:1;
+			uint8_t rxb8:1;
+			uint8_t ucsz2:1;
+			uint8_t txen:1;
+			uint8_t rxen:1;
+			uint8_t udrie:1;
+			uint8_t txcie:1;
+			uint8_t rxcie:1;			
+		};
+	};
+	union{
+		uint8_t UCSRC;
+		struct{
+			uint8_t ucpol:1;
+			uint8_t ucsz0:1;
+			uint8_t ucsz1:1;
+			uint8_t usbs:1;
+			uint8_t upm0:1;
+			uint8_t upm1:1;
+			uint8_t umsel0:1;
+			uint8_t umsel1:1;			
+		};
+	};
+	union{
+		uint8_t res;
+	};
+	union{
+		uint16_t UBRR;
+		struct{
+			uint8_t ubrrl:8;
+			uint8_t ubrrh:8;
+		};
+	};
 	
-	uint16_t ubrr= 16000000/16/baudrate-1;
+}UART_Regs_t;
 
-	switch(com){
-		case 0:
-				   // Configura baudrate
-		    UBRR0H = (unsigned char)(ubrr >> 8);
-		    UBRR0L = (unsigned char)ubrr;
 
-			    // Activa la doble transimicion
-		    UCSR1A = (1 << U2X0);
+UART_Regs_t *uart_offsets[]={
+	&UCSR0A,
+	&UCSR1A,
+	&UCSR2A,
+	&UCSR3A	
+};
+
+void UART_Ini(uint8_t com,uint32_t baudrate,uint8_t size,uint8_t parity,uint8_t stop)
+{
+	UART_Regs_t *myUart = uart_offsets[com];
+	
+	//Calculo para sacar baudaje normal
+	uint16_t velNormal=16000000/16/baudrate-1;
+	uint16_t baudNormal=16000000/16/(velNormal+1);
+
+	//calculo para sacar baudaje Doble velocidad
+	uint16_t velDoble=16000000/8/baudrate-1;
+	uint16_t baudDoble=16000000/8/(velDoble+1);
+
+	//Sacamos el error
+	uint16_t errorNormal = ((baudNormal - baudrate) * 100) / baudrate;
+    uint16_t errorDoble = ((baudDoble - baudrate) * 100) / baudrate;
 		
-		    // Habilita transmisor y receptor
-		    UCSR0B = (1 << RXEN0) | (1 << TXEN0);
-		
-            // Configuracion para UCSR0C
-            uint8_t config = 0;
 
-            // Configuracion del tamano de size
-            if (size == 5) {
-                config |= 0; // 5 bits, no se configuran bits
-            } else if (size == 6) {
-                config |= (1 << UCSZ00); // 6 bits
-            } else if (size == 7) {
-                config |= (1 << UCSZ01); // 7 bits
-            } else if (size == 8) {
-                config |= (1 << UCSZ01) | (1 << UCSZ00); // 8 bits
-            }
-
-            // Configuracion de paridad
-            if (parity == 1) {
-                config |= (1 << UPM01); // Paridad par
-            } else if (parity == 2) {
-                config |= (1 << UPM01) | (1 << UPM00); // Paridad impar
-            }
-
-            // Configuracion de bits de parada
-            if (stop == 2) {
-                config |= (1 << USBS0); // 2 bits de parada
-            }
-
-            // Asignar el valor configurado a UCSR0C
-            UCSR0C = config;   
-
-			break;
-		case 1:
-				   // Configura baudrate
-		    UBRR1H = (unsigned char)(ubrr >> 8);
-		    UBRR1L = (unsigned char)ubrr;
-		
-		    // Activa la doble transmision
-		    UCSR1A = (1 << U2X1);
-		
-		    // Habilita transmisor y receptor
-		    UCSR1B = (1 << RXEN1) | (1 << TXEN1);
-			
-            // Configuracion para UCSR0C
-            config = 0;
-
-            // Configuracion del tamaño de size
-            if (size == 5) {
-                config |= 0; // 5 bits, no se configuran bits
-            } else if (size == 6) {
-                config |= (1 << UCSZ10); // 6 bits
-            } else if (size == 7) {
-                config |= (1 << UCSZ11); // 7 bits
-            } else if (size == 8) {
-                config |= (1 << UCSZ11) | (1 << UCSZ10); // 8 bits
-            }
-
-            // Configuracion de paridad
-            if (parity == 1) {
-                config |= (1 << UPM11); // Paridad par
-            } else if (parity == 2) {
-                config |= (1 << UPM11) | (1 << UPM10); // Paridad impar
-            }
-
-            // Configuracion de bits de parada
-            if (stop == 2) {
-                config |= (1 << USBS1); // 2 bits de parada
-            }
-
-            // Asignar el valor configurado a UCSR1C
-            UCSR1C = config;
-			break;
-		case 2:
-					   // Configura baudrate
-		    UBRR2H = (unsigned char)(ubrr >> 8);
-		    UBRR2L = (unsigned char)ubrr;
-		
-		    // Activa la doble transmision
-		    UCSR2A = (1 << U2X2);
-		
-		    // Habilita transmisor y receptor
-		    UCSR2B = (1 << RXEN2) | (1 << TXEN2);
-		
-		
-            // Configuracion para UCSR0C
-            config = 0;
-
-            // Configuracion del size
-            if (size == 5) {
-                config |= 0; // 5 bits, no se configuran bits
-            } else if (size == 6) {
-                config |= (1 << UCSZ20); // 6 bits
-            } else if (size == 7) {
-                config |= (1 << UCSZ21); // 7 bits
-            } else if (size == 8) {
-                config |= (1 << UCSZ21) | (1 << UCSZ20); // 8 bits
-            }
-
-            // Configuracion de paridad
-            if (parity == 1) {
-                config |= (1 << UPM21); // Paridad par
-            } else if (parity == 2) {
-                config |= (1 << UPM21) | (1 << UPM20); // Paridad impar
-            }
-
-            // Configuracion de bits de parada
-            if (stop == 2) {
-                config |= (1 << USBS2); // 2 bits de parada
-            }
-
-            // Asignar el valor configurado a UCSR2C
-            UCSR2C = config;
-			break;
-		case 3:
-				   // Configura baudrate
-		    UBRR3H = (unsigned char)(ubrr >> 8);
-		    UBRR3L = (unsigned char)ubrr;
-		
-		    // Activa la doble transmision
-		    UCSR3A = (1 << U2X3);
-		
-		    // Habilita transmisor y eceptor
-		    UCSR3B = (1 << RXEN3) | (1 << TXEN3);
-		
-	                  // Configuracion para UCSR0C
-            config = 0;
-
-            // Configuracion del tamaño de datos
-            if (size == 5) {
-                config |= 0; // 5 bits, no se configuran bits
-            } else if (size == 6) {
-                config |= (1 << UCSZ30); // 6 bits
-            } else if (size == 7) {
-                config |= (1 << UCSZ31); // 7 bits
-            } else if (size == 8) {
-                config |= (1 << UCSZ31) | (1 << UCSZ30); // 8 bits
-            }
-
-            // Configuracion de paridad
-            if (parity == 1) {
-                config |= (1 << UPM31); // Paridad par
-            } else if (parity == 2) {
-                config |= (1 << UPM31) | (1 << UPM30); // Paridad impar
-            }
-
-            // Configuracion de bits de parada
-            if (stop == 2) {
-                config |= (1 << USBS3); // 2 bits de parada
-            }
-
-            // Asignar el valor configurado a UCSR3C
-            UCSR3C = config;
-			break;
+	
+	//Registro A	
+	if(errorDoble<errorNormal){
+		myUart->u2x=1;
+		myUart->ubrrh=(unsigned char)(velDoble>>8);
+		myUart->ubrrl=(unsigned char)velDoble;
+	}else{
+		myUart->ubrrh=(unsigned char)(velNormal>>8);
+		myUart->ubrrl=(unsigned char)velNormal;	
 	}
+
+	//Registro B
+	myUart->txen=1;
+	myUart->rxen=1;
+
+	//Registro C
+	if(size==6){ //para el tamano de los bits
+		myUart->ucsz0=1;	
+	}else if(size==7){
+		myUart->ucsz1=1;
+	}else if(size==8){
+		myUart->ucsz0=1;
+		myUart->ucsz1=1;
+	}
+	if(parity==1){ //configuracion de paridad
+		myUart->upm1=1;
+	}else if(parity==2){
+		myUart->upm1=1;
+		myUart->upm0=1;
+	}
+	if(stop==2){
+		myUart->usbs=1;
+	}
+	
 }
 
 
