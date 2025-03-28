@@ -195,7 +195,8 @@ void UART_Ini(uint8_t com,uint32_t baudrate,uint8_t size,uint8_t parity,uint8_t 
 
 void UART_puts(uint8_t com, char *str){
 	while(*str){
-		UART_putchar(com,*str++);
+		UART_putchar(com,*str);
+		str++;
 	}
 }
 
@@ -214,7 +215,7 @@ void UART_putchar(uint8_t com,char data){
 			UDR2 =data; //pasamos el dato a UDR2
 			break;
 		case 3:
-			(!(UCSR3A & (1<<UDRE3))); //Cuando este vacio se rompe
+			while(!(UCSR3A & (1<<UDRE3))); //Cuando este vacio se rompe
 			UDR3 =data; //pasamos el dato a UDR3
 			break;
 	}
@@ -248,40 +249,47 @@ uint8_t UART_available(uint8_t com){
 }
 
 char UART_getchar(uint8_t com){
-	char data;
-	while(!UART_available(com));
+	    while(!UART_available(com));
 		switch(com){
 			case 0:{
-				data=UDR0;
+				return UDR0;
 				break;
 			}
 			case 1:{
-				data=UDR1;
+				return UDR1;
 				break;
 			}
 			case 2:{
-				data=UDR2;
+				return UDR2;
 				break;
 			}
 			case 3:{
-				data=UDR3;
+				return UDR3;
 				break;
 			}
 		}
-		return data;
 }
 
 void UART_gets(uint8_t com,char *str){
-	char caracter;
-	uint8_t idx=0;
+	char caracter=0;
+	uint16_t idx=0;
 	while(1){
 		caracter=UART_getchar(com); //obtenemos el carac
-		if(caracter==13){ //si es un enter se rompe
+
+		if(caracter>='0' && caracter<='9'){
+			str[idx]=caracter;
+			idx++;
+		}else if(caracter==13){ //enter
+			str[idx]='\0';
+			idx++;
 			break;
-		}else{
-			str[idx]=caracter; //coloca el caracter en la posicion actual
-			idx++;	//avanza el indice
+		}else if(caracter==8 || caracter == 127){ //backspace
+			if(idx>0){
+				idx--;
+				str[idx]='\0';
+			}
 		}
+
 	}
 
 }
@@ -316,8 +324,8 @@ void UART_gotoxy(uint8_t com,uint8_t x,uint8_t y){
 }
 
 void itoa(uint16_t number,char* str,uint8_t base){
-int i = 0;
-	int copia=i; //paa inverti la cadena
+    uint16_t i = 0;
+	uint16_t copia=i; //paa inverti la cadena
 	    //en caso de que el numero sea cero, solo se agrega el carc nulo y se agrega el carac de cero
     if (number == 0) {
         str[i++] = '0';
@@ -325,7 +333,7 @@ int i = 0;
         return;
     }
 	  do {
-	    int residuo = number % base;  //Obtenemos el residuo
+	    uint16_t residuo = number % base;  //Obtenemos el residuo
 	    if (residuo <= 9) {
 		    str[i++] = residuo + '0'; // Si el residuo es menor o igual a 9, es un digito
 	    } else {
@@ -337,7 +345,7 @@ int i = 0;
 	    // Colocamos el  caracter nulo
   		str[i] = '\0';
 		//invertimos la cadena resuttante
-		int end = i - 1;
+		uint16_t end = i - 1;
 	    while (copia < end) {
 	        char temp = str[copia];
 	        str[copia] = str[end];
