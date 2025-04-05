@@ -76,11 +76,11 @@ typedef struct{
 }UART_Regs_t;
 
 
-UART_Regs_t *uart_offsets[]={
+uint8_t *uart_offsets[]={
 	&UCSR0A,
 	&UCSR1A,
 	&UCSR2A,
-	&UCSR3A	
+	&UCSR3A,	
 };
 
 void UART_Ini(uint8_t com,uint32_t baudrate,uint8_t size,uint8_t parity,uint8_t stop)
@@ -102,7 +102,7 @@ void UART_Ini(uint8_t com,uint32_t baudrate,uint8_t size,uint8_t parity,uint8_t 
 
 	
 	//Registro A	
-	if(errorDoble<errorNormal){
+	if(errorDoble<=errorNormal){
 		myUart->u2x=1;
 		myUart->ubrrh=(unsigned char)(velDoble>>8);
 		myUart->ubrrl=(unsigned char)velDoble;
@@ -193,48 +193,56 @@ uint8_t UART_available(uint8_t com){
 }
 
 char UART_getchar(uint8_t com){
-	    while(!UART_available(com));
+	   	while(!UART_available(com));
+		char data;
 		switch(com){
 			case 0:{
-				return UDR0;
+				data=UDR0;
 				break;
 			}
 			case 1:{
-				return UDR1;
+				data=UDR1;
 				break;
 			}
 			case 2:{
-				return UDR2;
+				data=UDR2;
 				break;
 			}
 			case 3:{
-				return UDR3;
+				data=UDR3;
 				break;
 			}
 		}
+		return data;
 }
 
+
 void UART_gets(uint8_t com,char *str){
-	char caracter=0;
+	char caracter;
 	uint16_t idx=0;
 	while(1){
-		caracter=UART_getchar(com); //obtenemos el carac
-
-		if(caracter>='0' && caracter<='9'){
-			str[idx]=caracter;
-			idx++;
-		}else if(caracter==13){ //enter
-			str[idx]='\0';
-			idx++;
-			break;
-		}else if(caracter==8 || caracter == 127){ //backspace
-			if(idx>0){
-				idx--;
-				str[idx]='\0';
+			caracter=UART_getchar(com); //obtenemos el carac
+	
+			if(caracter==13){ //enter
+				if(idx==0){
+				 str[idx]='0';
+				 idx++;
+				}
+				break;
+			}else if(caracter==8 || caracter == 127){ //backspace
+				if(idx>0){
+					UART_putchar(com,'\b');
+					UART_putchar(com,' ');
+					UART_putchar(com,'\b');
+					idx--;
+				}
+			}else if(idx<19){
+				str[idx]=caracter;
+				UART_putchar(com,caracter);
+				idx++;
 			}
-		}
-
 	}
+	str[idx]='\0';
 
 }
 
@@ -276,8 +284,9 @@ void itoa(uint16_t number,char* str,uint8_t base){
         str[i] = '\0';
         return;
     }
+
 	  do {
-	    uint16_t residuo = number % base;  //Obtenemos el residuo
+	    uint32_t residuo = number % base;  //Obtenemos el residuo
 	    if (residuo <= 9) {
 		    str[i++] = residuo + '0'; // Si el residuo es menor o igual a 9, es un digito
 	    } else {
@@ -305,6 +314,7 @@ uint16_t atoi(char *str){
     while (*str >= '0' && *str <= '9') { //Mientras sea un digito
         dato = dato * 10 + (*str - '0'); //lo convertimos a numeo
         str++;   //avanzamos al siguiente caracter
+
     }
 	return dato;
 }

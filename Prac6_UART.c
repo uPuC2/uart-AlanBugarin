@@ -10,9 +10,10 @@ int main(void)
     UART_Ini(0,12345,8,1,2);
     UART_Ini(2,115200,8,0,1);
     UART_Ini(3,115200,8,0,1);
+
     while(1) 
     {
-        UART_getchar(0);
+		UART_getchar(0);
         UART_clrscr(0);
 
         UART_gotoxy(0,2,2);
@@ -24,8 +25,10 @@ int main(void)
         UART_gets(0,cad);
 // -------------------------------------------
         // Cycle through UART2->UART3
+
         UART_puts(2,cad);
         UART_puts(2,"\r");
+
         UART_gets(3,cadUart3);
         UART_gotoxy(0,5,3);
         UART_puts(0,cadUart3);
